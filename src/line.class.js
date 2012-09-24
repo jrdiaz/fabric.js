@@ -81,6 +81,7 @@
      * @param {CanvasRenderingContext2D} ctx Context to render on
      */
     _render: function(ctx) {
+      this._applyShadow( ctx ); // Shadow
       ctx.beginPath();
 
       if (this.group) {
@@ -100,6 +101,7 @@
       ctx.strokeStyle = ctx.fillStyle;
       ctx.stroke();
       ctx.strokeStyle = origStrokeStyle;
+      this._resetShadow( ctx ); // Resets shadows
     },
 
     /**

@@ -70,6 +70,7 @@
      * @param ctx {CanvasRenderingContext2D} context to render on
      */
     _render: function(ctx, noTransform) {
+      this._applyShadow( ctx ); // Shadow
       ctx.beginPath();
       // multiply by currently set alpha (the one that was set by path group where this object is contained, for example)
       ctx.globalAlpha *= this.opacity;
@@ -79,8 +80,10 @@
         ctx.fill();
       }
       if (this.stroke) {
+        this._applyShadow( ctx, true ); // Stroke shadow. By default, avoids that stroke casts shadows "inside" the fill unless 'strokeShadow' is specified
         ctx.stroke();
       }
+      this._resetShadow( ctx ); // Resets shadows
     },
 
     /**

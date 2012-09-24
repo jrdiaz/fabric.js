@@ -81,6 +81,7 @@
           w = this.width,
           h = this.height;
 
+      this._applyShadow( ctx ); // Shadow
       ctx.beginPath();
       ctx.globalAlpha *= this.opacity;
 
@@ -114,8 +115,10 @@
         this._renderDashedStroke(ctx);
       }
       else if (this.stroke) {
+        this._applyShadow( ctx, true ); // Stroke shadow. By default, avoids that stroke casts shadows "inside" the fill unless 'strokeShadow' is specified
         ctx.stroke();
       }
+      this._resetShadow( ctx ); // Resets shadows
     },
 
     // since our coordinate system differs from that of SVG

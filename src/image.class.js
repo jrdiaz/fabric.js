@@ -267,6 +267,7 @@
      * @private
      */
     _render: function(ctx) {
+      this._applyShadow( ctx ); // Shadow
       ctx.drawImage(
         this.getElement(),
         - this.width / 2,
@@ -274,6 +275,7 @@
         this.width,
         this.height
       );
+      this._resetShadow( ctx ); // Resets shadows
     },
 
     /**

@@ -532,6 +532,59 @@
     },
 
     /**
+     * Method to reset the shadows of the context of the canvas.
+     * @method _resetShadow
+     */
+    _resetShadow: function( ctx ) {
+      if( this.shadow ) ctx.shadowColor = 'transparent'; // Resets shadows
+    },
+
+    /**
+     * Method to set shadows on context when rendering objects on canvas.
+     * @method _applyShadow
+     * @return {Boolean} true if has shadows
+     */
+    _applyShadow: function( ctx, onStroke ) {
+
+      var shadow       = this.shadow || false
+        , hasShadows   = shadow !== false
+        ;
+
+      if( !hasShadows ) return false;
+
+      onStroke = onStroke || false;
+      var fillShadow   = hasShadows && typeof shadow.fillShadow   !== 'undefined' ?  shadow.fillShadow   : hasShadows
+        , strokeShadow = hasShadows && typeof shadow.strokeShadow !== 'undefined' && shadow.strokeShadow ? true : false
+        ;
+
+      // Apply the shadow to the context
+      if( ( !onStroke && fillShadow ) || ( onStroke && !fillShadow && strokeShadow ) )
+      {
+        // Casts shadows on geometry fill/stroke
+        ctx.shadowColor = shadow.color   || 'black';
+        ctx.shadowBlur  = shadow.blur    || 0;
+        ctx.opacity     = shadow.opacity || this.opacity;
+        if( shadow.offset || false )
+        {
+          // Shadow can be a number or an x/y object
+          var offset = isNaN( shadow.offset ) ? shadow.offset: { x: offset, y: offset };
+          ctx.shadowOffsetX = offset.x;
+          ctx.shadowOffsetY = offset.y;
+        }
+        return true;
+      }
+      else if( onStroke && fillShadow && !strokeShadow )
+      {
+        // Avoids that stroke casts shadows "inside" the fill if not desired wirh the strokeShadow property
+        this._resetShadow( ctx );
+        return true;
+      }
+
+      return false;
+
+    },
+
+    /**
      * Returns width of an object
      * @method getWidth
      * @return {Number} width value

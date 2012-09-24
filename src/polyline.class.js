@@ -80,6 +80,7 @@
      */
     _render: function(ctx) {
       var point;
+      this._applyShadow( ctx ); // Shadow
       ctx.beginPath();
       ctx.moveTo(this.points[0].x, this.points[0].y);
       for (var i = 0, len = this.points.length; i < len; i++) {
@@ -90,8 +91,10 @@
         ctx.fill();
       }
       if (this.stroke) {
+        this._applyShadow( ctx, true ); // Stroke shadow. By default, avoids that stroke casts shadows "inside" the fill unless 'strokeShadow' is specified
         ctx.stroke();
       }
+      this._resetShadow( ctx ); // Resets shadows
     },
 
     /**

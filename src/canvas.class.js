@@ -133,6 +133,12 @@
      */
     containerClass:        'canvas-container',
 
+    /**
+     * Indicates whether fabric.Canvas#add should re-render canvas when dragging an object.
+     * Disabling this option could give a great performance boost when moving but relies on an external render loop
+     */
+    renderOnMove: true, // JRD
+
     _initInteractive: function() {
       this._currentTransform = null;
       this._groupSelector = null;
@@ -464,7 +470,7 @@
           this._currentTransform.target.fire('moving');
         }
         // only commit here. when we are actually moving the pictures
-        this.renderAll();
+        this.renderOnMove && this.renderAll(); // JRD
       }
       this.fire('mouse:move', { target: target, e: e });
       target && target.fire('mousemove', { e: e });

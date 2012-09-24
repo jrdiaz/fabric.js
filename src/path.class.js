@@ -527,6 +527,7 @@
       if (this.stroke) {
         ctx.strokeStyle = this.stroke;
       }
+      this._applyShadow( ctx ); // Shadow
       ctx.beginPath();
 
       this._render(ctx);
@@ -535,6 +536,7 @@
         ctx.fill();
       }
       if (this.stroke) {
+        this._applyShadow( ctx, true ); // Stroke shadow. By default, avoids that stroke casts shadows "inside" the fill unless 'strokeShadow' is specified
         ctx.strokeStyle = this.stroke;
         ctx.lineWidth = this.strokeWidth;
         ctx.lineCap = ctx.lineJoin = 'round';
@@ -544,6 +546,7 @@
         this.drawBorders(ctx);
         this.hideCorners || this.drawCorners(ctx);
       }
+      //this._resetShadow( ctx ); // Resets shadows. Not needed since we restore the context
       ctx.restore();
     },
 
