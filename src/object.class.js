@@ -221,7 +221,8 @@
       'top left width height scaleX scaleY flipX flipY ' +
       'theta angle opacity cornersize fill overlayFill ' +
       'stroke strokeWidth strokeDashArray fillRule ' +
-      'borderScaleFactor transformMatrix selectable'
+      'borderScaleFactor transformMatrix selectable ' +
+      'shadow'
     ).split(' '),
 
     /**
