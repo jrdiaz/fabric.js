@@ -7726,8 +7726,8 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
       'top left width height scaleX scaleY flipX flipY ' +
       'theta angle opacity cornersize fill overlayFill ' +
       'stroke strokeWidth strokeDashArray fillRule ' +
-      'borderScaleFactor transformMatrix selectable' +
-      ' shadow'
+      'borderScaleFactor transformMatrix selectable ' +
+      'shadow'
     ).split(' '),
 
     /**
@@ -7770,7 +7770,6 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
       var i = this.stateProperties.length, prop;
       while (i--) {
         prop = this.stateProperties[i];
-        console.log( prop );
         if (prop in options) {
           this.set(prop, options[prop]);
         }
