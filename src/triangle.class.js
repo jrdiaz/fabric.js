@@ -46,6 +46,7 @@
           heightBy2 = this.height / 2;
 
       this._applyShadow( ctx ); // Shadow
+
       ctx.beginPath();
       ctx.moveTo(-widthBy2, heightBy2);
       ctx.lineTo(0, -heightBy2);
@@ -106,4 +107,4 @@
     return new fabric.Triangle(object);
   };
 
-})(typeof exports != 'undefined' ? exports : this);
+})(typeof exports !== 'undefined' ? exports : this);

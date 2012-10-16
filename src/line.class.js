@@ -183,4 +183,4 @@
     return new fabric.Line(points, object);
   };
 
-})(typeof exports != 'undefined' ? exports : this);
+})(typeof exports !== 'undefined' ? exports : this);

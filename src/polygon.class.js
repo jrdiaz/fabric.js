@@ -171,4 +171,4 @@
     return new fabric.Polygon(object.points, object);
   };
 
-})(typeof exports != 'undefined' ? exports : this);
+})(typeof exports !== 'undefined' ? exports : this);
