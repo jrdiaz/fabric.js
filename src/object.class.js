@@ -222,7 +222,7 @@
       'theta angle opacity cornersize fill overlayFill ' +
       'stroke strokeWidth strokeDashArray fillRule ' +
       'borderScaleFactor transformMatrix selectable ' +
-      'shadow'
+      'shadowColor shadowBlur shadowOffset shadowOffsetX shadowOffsetY shadowOpacity fillShadow strokeShadow' // Shadow properties
     ).split(' '),
 
     /**
@@ -314,7 +314,17 @@
         selectable:       this.selectable,
         hasControls:      this.hasControls,
         hasBorders:       this.hasBorders,
-        hasRotatingPoint: this.hasRotatingPoint
+        hasRotatingPoint: this.hasRotatingPoint,
+
+        // Shadow properties serialization
+        shadowColor     : this.shadowColor  ,
+        shadowBlur      : this.shadowBlur,
+        shadowOffset    : this.shadowOffset,
+        shadowOffsetX   : this.shadowOffsetX,
+        shadowOffsetY   : this.shadowOffsetY,
+        shadowOpacity   : this.shadowOpacity,
+        fillShadow      : this.fillShadow,
+        strokeShadow    : this.strokeShadow
       };
 
       if (!this.includeDefaultValues) {
@@ -547,31 +557,27 @@
      */
     _applyShadow: function( ctx, onStroke ) {
 
-      var shadow       = this.shadow || false
-        , hasShadows   = shadow !== false
+      var hasShadowOffset = this.shadowOffset || this.shadowOffsetX || this.shadowOffsetY || false
+        , hasShadows      = this.shadowBlur   || hasShadowOffset    || false
         ;
 
       if( !hasShadows ) return false;
 
       onStroke = onStroke || false;
-      var fillShadow   = hasShadows && typeof shadow.fillShadow   !== 'undefined' ?  shadow.fillShadow   : hasShadows
-        , strokeShadow = hasShadows && typeof shadow.strokeShadow !== 'undefined' && shadow.strokeShadow ? true : false
+      var fillShadow   = typeof this.fillShadow   !== 'undefined' ?  this.fillShadow   : hasShadows
+        , strokeShadow = typeof this.strokeShadow !== 'undefined' && this.strokeShadow ? true : false
         ;
 
       // Apply the shadow to the context
       if( ( !onStroke && fillShadow ) || ( onStroke && !fillShadow && strokeShadow ) )
       {
         // Casts shadows on geometry fill/stroke
-        ctx.shadowColor = shadow.color   || 'black';
-        ctx.shadowBlur  = shadow.blur    || 0;
-        ctx.opacity     = shadow.opacity || this.opacity;
-        if( shadow.offset || false )
-        {
-          // Shadow can be a number or an x/y object
-          var offset = isNaN( shadow.offset ) ? shadow.offset: { x: offset, y: offset };
-          ctx.shadowOffsetX = offset.x;
-          ctx.shadowOffsetY = offset.y;
-        }
+        ctx.shadowColor   = this.shadowColor   || 'black';
+        ctx.shadowBlur    = this.shadowBlur    || 0;
+        ctx.opacity       = this.shadowOpacity || this.opacity      || 1;
+        ctx.shadowOffsetX = this.shadowOffsetX || this.shadowOffset || 0;
+        ctx.shadowOffsetY = this.shadowOffsetY || this.shadowOffset || 0;
+
         return true;
       }
       else if( onStroke && fillShadow && !strokeShadow )
