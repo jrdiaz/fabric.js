@@ -317,7 +317,7 @@
         hasRotatingPoint: this.hasRotatingPoint,
 
         // Shadow properties serialization
-        shadowColor     : this.shadowColor  ,
+        shadowColor     : this.shadowColor,
         shadowBlur      : this.shadowBlur,
         shadowOffset    : this.shadowOffset,
         shadowOffsetX   : this.shadowOffsetX,
