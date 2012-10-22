@@ -557,7 +557,10 @@
      * @method _resetShadow
      */
     _resetShadow: function( ctx ) {
-      if( this.shadow ) ctx.shadowColor = 'transparent'; // Resets shadows
+      var hasShadowOffset = this.shadowOffset || this.shadowOffsetX || this.shadowOffsetY || false
+        , hasShadows      = this.shadowBlur   || hasShadowOffset    || false
+        ;
+      if( hasShadows ) ctx.shadowColor = 'transparent'; // Resets shadows
     },
 
     /**
