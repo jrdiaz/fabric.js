@@ -13,13 +13,27 @@
     return;
   }
 
+  // lock-related properties, for use in fabric.Group#get
+  // to enable locking behavior on group
+  // when one of its objects has lock-related properties set
+  var _lockProperties = {
+    lockMovementX:  true,
+    lockMovementY:  true,
+    lockRotation:   true,
+    lockScalingX:   true,
+    lockScalingY:   true,
+    lockUniScaling: true
+  };
+
   /**
+   * Group class
    * @class Group
    * @extends fabric.Object
    */
   fabric.Group = fabric.util.createClass(fabric.Object, /** @scope fabric.Group.prototype */ {
 
     /**
+     * Type of an object
      * @property
      * @type String
      */
@@ -33,6 +47,8 @@
      * @return {Object} thisArg
      */
     initialize: function(objects, options) {
+      options = options || { };
+
       this.objects = objects || [];
       this.originalState = { };
 
@@ -161,10 +177,24 @@
     },
 
     /**
+     * Properties that are delegated to group objects when reading/writing
+     */
+    delegatedProperties: {
+      fill:             true,
+      opacity:          true,
+      fontFamily:       true,
+      fontWeight:       true,
+      lineHeight:       true,
+      textDecoration:   true,
+      textShadow:       true,
+      backgroundColor:  true
+    },
+
+    /**
      * @private
      */
     _set: function(key, value) {
-      if (key === 'fill' || key === 'opacity') {
+      if (key in this.delegatedProperties) {
         var i = this.objects.length;
         this[key] = value;
         while (i--) {
@@ -189,11 +219,12 @@
     /**
      * Returns object representation of an instance
      * @method toObject
+     * @param {Array} propertiesToInclude
      * @return {Object} object representation of an instance
      */
-    toObject: function() {
-      return extend(this.callSuper('toObject'), {
-        objects: invoke(this.objects, 'toObject')
+    toObject: function(propertiesToInclude) {
+      return extend(this.callSuper('toObject', propertiesToInclude), {
+        objects: invoke(this.objects, 'toObject', propertiesToInclude)
       });
     },
 
@@ -208,15 +239,22 @@
 
       var groupScaleFactor = Math.max(this.scaleX, this.scaleY);
 
-      for (var i = 0, len = this.objects.length; i < len; i++) {
+      //The array is now sorted in order of highest first, so start from end.
+      for (var i = this.objects.length; i > 0; i--) {
 
-        var object = this.objects[i];
-        var originalScaleFactor = object.borderScaleFactor;
+        var object = this.objects[i-1],
+            originalScaleFactor = object.borderScaleFactor,
+            originalHasRotatingPoint = object.hasRotatingPoint;
 
         object.borderScaleFactor = groupScaleFactor;
+        object.hasRotatingPoint = false;
+
         object.render(ctx);
+
         object.borderScaleFactor = originalScaleFactor;
+        object.hasRotatingPoint = originalHasRotatingPoint;
       }
+
       if (!noTransform && this.active) {
         this.drawBorders(ctx);
         this.hideCorners || this.drawCorners(ctx);
@@ -439,18 +477,21 @@
     /**
      * Makes all of this group's objects grayscale (i.e. calling `toGrayscale` on them)
      * @method toGrayscale
+     * @return {fabric.Group} thisArg
+     * @chainable
      */
     toGrayscale: function() {
       var i = this.objects.length;
       while (i--) {
         this.objects[i].toGrayscale();
       }
+      return this;
     },
 
     /**
      * Returns svg representation of an instance
      * @method toSVG
-     * @return {string} svg representation of an instance
+     * @return {String} svg representation of an instance
      */
     toSVG: function() {
       var objectsMarkup = [ ];
@@ -462,16 +503,41 @@
         '<g transform="' + this.getSvgTransform() + '">' +
           objectsMarkup.join('') +
         '</g>');
+    },
+
+    /**
+     * Returns requested property
+     * @method get
+     * @param {String} prop Property to get
+     * @return {Any}
+     */
+    get: function(prop) {
+      if (prop in _lockProperties) {
+        if (this[prop]) {
+          return this[prop];
+        }
+        else {
+          for (var i = 0, len = this.objects.length; i < len; i++) {
+            if (this.objects[i][prop]) {
+              return true;
+            }
+          }
+          return false;
+        }
+      }
+      else {
+        return this[prop];
+      }
     }
   });
 
   /**
-   * Returns fabric.Group instance from an object representation
+   * Returns {@link fabric.Group} instance from an object representation
    * @static
    * @method fabric.Group.fromObject
-   * @param object {Object} object to create a group from
-   * @param options {Object} options object
-   * @return {fabric.Group} an instance of fabric.Group
+   * @param {Object} object Object to create a group from
+   * @param {Object} [options] Options object
+   * @return {fabric.Group} An instance of fabric.Group
    */
   fabric.Group.fromObject = function(object, callback) {
     fabric.util.enlivenObjects(object.objects, function(enlivenedObjects) {
@@ -480,6 +546,11 @@
     });
   };
 
+  /**
+   * Indicates that instances of this type are async
+   * @static
+   * @type Boolean
+   */
   fabric.Group.async = true;
 
 })(typeof exports !== 'undefined' ? exports : this);

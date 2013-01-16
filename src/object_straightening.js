@@ -1,38 +1,31 @@
 fabric.util.object.extend(fabric.Object.prototype, {
 
   /**
+   * @private
    * @method _getAngleValueForStraighten
    * @return {Number} angle value
-   * @private
    */
   _getAngleValueForStraighten: function() {
-    var angle = this.get('angle');
-
-    // TODO (kangax): can this be simplified?
-
-    if      (angle > -225 && angle <= -135) { return -180;  }
-    else if (angle > -135 && angle <= -45)  { return  -90;  }
-    else if (angle > -45  && angle <= 45)   { return    0;  }
-    else if (angle > 45   && angle <= 135)  { return   90;  }
-    else if (angle > 135  && angle <= 225 ) { return  180;  }
-    else if (angle > 225  && angle <= 315)  { return  270;  }
-    else if (angle > 315)                   { return  360;  }
-
-    return 0;
+    var angle = this.getAngle() % 360;
+    if (angle > 0) {
+      return Math.round((angle-1)/90) * 90;
+    }
+    return Math.round(angle/90) * 90;
   },
 
   /**
+   * Straightens an object (rotating it from current angle to one of 0, 90, 180, 270, etc. depending on which is closer)
    * @method straighten
    * @return {fabric.Object} thisArg
    * @chainable
    */
   straighten: function() {
-    var angle = this._getAngleValueForStraighten();
-    this.setAngle(angle);
+    this.setAngle(this._getAngleValueForStraighten());
     return this;
   },
 
   /**
+   * Same as {@link fabric.Object.prototype.straghten} but with animation
    * @method fxStraighten
    * @param {Object} callbacks
    *                  - onComplete: invoked on completion
@@ -86,7 +79,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
   },
 
   /**
-   * Same as `fabric.Canvas#straightenObject`, but animated
+   * Same as {@link fabric.Canvas.prototype.straightenObject}, but animated
    * @method fxStraightenObject
    * @param {fabric.Object} object Object to straighten
    * @return {fabric.Canvas} thisArg

@@ -2,7 +2,8 @@
 
   "use strict";
 
-  var fabric = global.fabric || (global.fabric = { });
+  var fabric = global.fabric || (global.fabric = { }),
+      extend = fabric.util.object.extend;
 
   if (fabric.Rect) {
     console.warn('fabric.Rect is already defined');
@@ -10,24 +11,28 @@
   }
 
   /**
+   * Rectangle class
    * @class Rect
    * @extends fabric.Object
    */
   fabric.Rect = fabric.util.createClass(fabric.Object, /** @scope fabric.Rect.prototype */ {
 
     /**
+     * Type of an object
      * @property
      * @type String
      */
     type: 'rect',
 
     /**
+     * Horizontal border radius
      * @property
      * @type Number
      */
     rx: 0,
 
     /**
+     * Vertical border radius
      * @property
      * @type Number
      */
@@ -36,13 +41,18 @@
     /**
      * Constructor
      * @method initialize
-     * @param options {Object} options object
+     * @param {Object} [options] Options object
      * @return {Object} thisArg
      */
     initialize: function(options) {
+      options = options || { };
+
       this._initStateProperties();
       this.callSuper('initialize', options);
       this._initRxRy();
+
+      this.x = 0;
+      this.y = 0;
     },
 
     /**
@@ -56,6 +66,7 @@
     },
 
     /**
+     * Initializes rx/ry attributes
      * @private
      * @method _initRxRy
      */
@@ -82,7 +93,7 @@
           h = this.height;
 
       ctx.beginPath();
-      ctx.globalAlpha *= this.opacity;
+      ctx.globalAlpha = this.group ? (ctx.globalAlpha * this.opacity) : this.opacity;
 
       if (this.transformMatrix && this.group) {
         ctx.translate(
@@ -118,7 +129,11 @@
       }
     },
 
-    // since our coordinate system differs from that of SVG
+    /**
+     * @method _normalizeLeftTopProperties
+     * @private
+     * Since coordinate system differs from that of SVG
+     */
     _normalizeLeftTopProperties: function(parsedAttributes) {
       if (parsedAttributes.left) {
         this.set('left', parsedAttributes.left + this.getWidth() / 2);
@@ -132,6 +147,7 @@
     },
 
     /**
+     * Returns complexity of an instance
      * @method complexity
      * @return {Number} complexity
      */
@@ -142,10 +158,11 @@
     /**
      * Returns object representation of an instance
      * @method toObject
+     * @param {Array} propertiesToInclude
      * @return {Object} object representation of an instance
      */
-    toObject: function() {
-      return fabric.util.object.extend(this.callSuper('toObject'), {
+    toObject: function(propertiesToInclude) {
+      return extend(this.callSuper('toObject', propertiesToInclude), {
         rx: this.get('rx') || 0,
         ry: this.get('ry') || 0
       });
@@ -154,7 +171,7 @@
     /**
      * Returns svg representation of an instance
      * @method toSVG
-     * @return {string} svg representation of an instance
+     * @return {String} svg representation of an instance
      */
     toSVG: function() {
       return '<rect ' +
@@ -166,8 +183,6 @@
               '/>';
     }
   });
-
-  // TODO (kangax): implement rounded rectangles (both parsing and rendering)
 
   /**
    * List of attribute names to account for when parsing SVG element (used by `fabric.Rect.fromElement`)
@@ -185,12 +200,12 @@
   }
 
   /**
-   * Returns fabric.Rect instance from an SVG element
+   * Returns {@link fabric.Rect} instance from an SVG element
    * @static
    * @method fabric.Rect.fromElement
-   * @param element {SVGElement} element to parse
-   * @param options {Object} options object
-   * @return {fabric.Rect} instance of fabric.Rect
+   * @param {SVGElement} element Element to parse
+   * @param {Object} [options] Options object
+   * @return {fabric.Rect} Instance of fabric.Rect
    */
   fabric.Rect.fromElement = function(element, options) {
     if (!element) {
@@ -200,14 +215,14 @@
     var parsedAttributes = fabric.parseAttributes(element, fabric.Rect.ATTRIBUTE_NAMES);
     parsedAttributes = _setDefaultLeftTopValues(parsedAttributes);
 
-    var rect = new fabric.Rect(fabric.util.object.extend((options ? fabric.util.object.clone(options) : { }), parsedAttributes));
+    var rect = new fabric.Rect(extend((options ? fabric.util.object.clone(options) : { }), parsedAttributes));
     rect._normalizeLeftTopProperties(parsedAttributes);
 
     return rect;
   };
 
   /**
-   * Returns fabric.Rect instance from an object representation
+   * Returns {@link fabric.Rect} instance from an object representation
    * @static
    * @method fabric.Rect.fromObject
    * @param object {Object} object to create an instance from

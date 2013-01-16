@@ -4,7 +4,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
    * Populates canvas with data from the specified dataless JSON
    * JSON format must conform to the one of `fabric.Canvas#toDatalessJSON`
    * @method loadFromDatalessJSON
-   * @param {String} json JSON string
+   * @param {String|Object} json JSON string or object
    * @param {Function} callback Callback, invoked when json is parsed
    *                            and corresponding objects (e.g: fabric.Image)
    *                            are initialized
@@ -56,7 +56,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
       delete obj[pathProp];
 
       if (typeof path !== 'string') {
-        if (obj.type === 'image') {
+        if (obj.type === 'image' || obj.type === 'group') {
           fabric[fabric.util.string.capitalize(obj.type)].fromObject(obj, function (o) {
             onObjectLoaded(o, index);
           });
@@ -93,6 +93,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
           else {
             obj.path = path;
             var object = fabric.Text.fromObject(obj);
+            /** @ignore */
             var onscriptload = function () {
               // TODO (kangax): find out why Opera refuses to work without this timeout
               if (Object.prototype.toString.call(fabric.window.opera) === '[object Opera]') {
@@ -147,7 +148,7 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
    * Populates canvas with data from the specified JSON
    * JSON format must conform to the one of `fabric.Canvas#toJSON`
    * @method loadFromJSON
-   * @param {String} json JSON string
+   * @param {String|Object} json JSON string or object
    * @param {Function} callback Callback, invoked when json is parsed
    *                            and corresponding objects (e.g: fabric.Image)
    *                            are initialized
@@ -157,13 +158,19 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
   loadFromJSON: function (json, callback) {
     if (!json) return;
 
-    var serialized = JSON.parse(json);
+    // serialize if it wasn't already
+    var serialized = (typeof json === 'string')
+      ? JSON.parse(json)
+      : json;
+
     if (!serialized || (serialized && !serialized.objects)) return;
 
     this.clear();
+
     var _this = this;
     this._enlivenObjects(serialized.objects, function () {
       _this.backgroundColor = serialized.background;
+      var backgroundImageLoaded, overlayImageLoaded;
 
       if (serialized.backgroundImage) {
         _this.setBackgroundImage(serialized.backgroundImage, function() {
@@ -172,11 +179,32 @@ fabric.util.object.extend(fabric.StaticCanvas.prototype, {
           _this.backgroundImageStretch = serialized.backgroundImageStretch;
 
           _this.renderAll();
+          backgroundImageLoaded = true;
 
-          callback && callback();
+          callback && overlayImageLoaded && callback();
         });
       }
       else {
+        backgroundImageLoaded = true;
+      }
+
+      if (serialized.overlayImage) {
+        _this.setOverlayImage(serialized.overlayImage, function() {
+
+          _this.overlayImageLeft = serialized.overlayImageLeft || 0;
+          _this.overlayImageTop = serialized.overlayImageTop || 0;
+
+          _this.renderAll();
+          overlayImageLoaded = true;
+
+          callback && backgroundImageLoaded && callback();
+        });
+      }
+      else {
+        overlayImageLoaded = true;
+      }
+
+      if (!serialized.backgroundImage && !serialized.overlayImage) {
         callback && callback();
       }
     });

@@ -12,12 +12,14 @@
   }
 
   /**
+   * Circle class
    * @class Circle
    * @extends fabric.Object
    */
   fabric.Circle = fabric.util.createClass(fabric.Object, /** @scope fabric.Circle.prototype */ {
 
     /**
+     * Type of an object
      * @property
      * @type String
      */
@@ -42,10 +44,11 @@
     /**
      * Returns object representation of an instance
      * @method toObject
+     * @param {Array} propertiesToInclude
      * @return {Object} object representation of an instance
      */
-    toObject: function() {
-      return extend(this.callSuper('toObject'), {
+    toObject: function(propertiesToInclude) {
+      return extend(this.callSuper('toObject', propertiesToInclude), {
         radius: this.get('radius')
       });
     },
@@ -53,7 +56,7 @@
     /**
      * Returns svg representation of an instance
      * @method toSVG
-     * @return {string} svg representation of an instance
+     * @return {String} svg representation of an instance
      */
     toSVG: function() {
       return ('<circle ' +
@@ -72,7 +75,7 @@
     _render: function(ctx, noTransform) {
       ctx.beginPath();
       // multiply by currently set alpha (the one that was set by path group where this object is contained, for example)
-      ctx.globalAlpha *= this.opacity;
+      ctx.globalAlpha = this.group ? (ctx.globalAlpha * this.opacity) : this.opacity;
       ctx.arc(noTransform ? this.left : 0, noTransform ? this.top : 0, this.radius, 0, piBy2, false);
       ctx.closePath();
       if (this.fill) {
@@ -132,10 +135,10 @@
    * Returns {@link fabric.Circle} instance from an SVG element
    * @static
    * @method fabric.Circle.fromElement
-   * @param element {SVGElement} element to parse
-   * @param options {Object} options object
+   * @param {SVGElement} element Element to parse
+   * @param {Object} [options] Options object
    * @throws {Error} If value of `r` attribute is missing or invalid
-   * @return {Object} instance of fabric.Circle
+   * @return {Object} Instance of fabric.Circle
    */
   fabric.Circle.fromElement = function(element, options) {
     options || (options = { });
@@ -149,7 +152,12 @@
     if ('top' in parsedAttributes) {
       parsedAttributes.top -= (options.height / 2) || 0;
     }
-    return new fabric.Circle(extend(parsedAttributes, options));
+    var obj = new fabric.Circle(extend(parsedAttributes, options));
+
+    obj.cx = parseFloat(element.getAttribute('cx')) || 0;
+    obj.cy = parseFloat(element.getAttribute('cy')) || 0;
+
+    return obj;
   };
 
   /**

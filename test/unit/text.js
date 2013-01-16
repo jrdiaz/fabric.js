@@ -8,6 +8,8 @@
 
   var REFERENCE_TEXT_OBJECT = {
     'type':             'text',
+    'originX':          'center',
+    'originY':          'center',
     'left':             0,
     'top':              0,
     'width':            20,
@@ -26,12 +28,12 @@
     'selectable':       true,
     'hasControls':      true,
     'hasBorders':       true,
-    'hasRotatingPoint': false,
+    'hasRotatingPoint': true,
     'transparentCorners': true,
     'perPixelTargetFind': false,
     'text':             'x',
     'fontSize':         40,
-    'fontWeight':       100,
+    'fontWeight':       400,
     'fontFamily':       'Times New Roman',
     'fontStyle':        '',
     'lineHeight':       1.3,
@@ -41,6 +43,7 @@
     'path':             null,
     'strokeStyle':      '',
     'backgroundColor':  '',
+    'textBackgroundColor':  '',
     'useNative':        true
   };
 
@@ -142,7 +145,12 @@
     // temp workaround for text objects not obtaining width under node
     // text.width = 20;
 
-    deepEqual(text.toObject(), REFERENCE_TEXT_OBJECT);
+    var expectedObject = fabric.util.object.extend(REFERENCE_TEXT_OBJECT, {
+      left: 10,
+      top: -26
+    });
+
+    deepEqual(text.toObject(), expectedObject);
   });
 
   test('fabric.Text.fromElement with custom attributes', function() {
@@ -169,8 +177,9 @@
     ok(textWithAttrs instanceof fabric.Text);
 
     var expectedObject = fabric.util.object.extend(REFERENCE_TEXT_OBJECT, {
-      left: 10,
-      top: 20,
+      /* left varies slightly due to node-canvas rendering so we're not testing for it */
+      left: textWithAttrs.left,
+      top: -59.95,
       width: 20,
       height: 159.9,
       fill: 'rgb(255,255,255)',

@@ -2,8 +2,10 @@
 
   var REFERENCE_PATH_OBJECT = {
     'type': 'path',
-    'left': 100,
-    'top': 100,
+    'originX': 'center',
+    'originY': 'center',
+    'left': 200,
+    'top': 200,
     'width': 200,
     'height': 200,
     'fill': 'red',
@@ -21,7 +23,7 @@
     'selectable': true,
     'hasControls': true,
     'hasBorders': true,
-    'hasRotatingPoint': false,
+    'hasRotatingPoint': true,
     'transparentCorners': true,
     'perPixelTargetFind': false
   };
@@ -68,7 +70,7 @@
   test('toString', function() {
     var path = makePathObject();
     ok(typeof path.toString == 'function');
-    equal('#<fabric.Path (4): { "top": 100, "left": 100 }>', path.toString());
+    equal('#<fabric.Path (4): { "top": 200, "left": 200 }>', path.toString());
   });
 
   test('toObject', function() {

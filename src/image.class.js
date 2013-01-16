@@ -13,36 +13,15 @@
     return;
   }
 
-  if (!fabric.Object) {
-    fabric.warn('fabric.Object is required for fabric.Image initialization');
-    return;
-  }
-
   /**
+   * Image class
    * @class Image
    * @extends fabric.Object
    */
   fabric.Image = fabric.util.createClass(fabric.Object, /** @scope fabric.Image.prototype */ {
 
     /**
-     * @property
-     * @type Boolean
-     */
-    active: false,
-
-    /**
-     * @property
-     * @type Boolean
-     */
-    bordervisibility: false,
-
-    /**
-     * @property
-     * @type Boolean
-     */
-    cornervisibility: false,
-
-    /**
+     * Type of an object
      * @property
      * @type String
      */
@@ -51,7 +30,8 @@
     /**
      * Constructor
      * @param {HTMLImageElement | String} element Image element
-     * @param {Object} options optional
+     * @param {Object} [options] Options object
+     * @return {fabric.Image}
      */
     initialize: function(element, options) {
       options || (options = { });
@@ -105,26 +85,6 @@
     },
 
     /**
-     * Sets border visibility
-     * @method setBorderVisibility
-     * @param {Boolean} visible When true, border is set to be visible
-     */
-    setBorderVisibility: function() {
-      this._resetWidthHeight();
-      this._adjustWidthHeightToBorders();
-      this.setCoords();
-    },
-
-    /**
-     * Sets corner visibility
-     * @method setCornersVisibility
-     * @param {Boolean} visible When true, corners are set to be visible
-     */
-    setCornersVisibility: function(visible) {
-      this.cornervisibility = !!visible;
-    },
-
-    /**
      * Renders image on a specified context
      * @method render
      * @param {CanvasRenderingContext2D} ctx Context to render on
@@ -132,7 +92,7 @@
     render: function(ctx, noTransform) {
       ctx.save();
       var m = this.transformMatrix;
-      this._resetWidthHeight();
+      // this._resetWidthHeight();
       if (this.group) {
         ctx.translate(-this.group.width/2 + this.width/2, -this.group.height/2 + this.height/2);
       }
@@ -153,19 +113,20 @@
     /**
      * Returns object representation of an instance
      * @method toObject
-     * @return {Object} Object representation of an instance
+     * @param {Array} propertiesToInclude
+     * @return {Object} object representation of an instance
      */
-    toObject: function() {
-      return extend(this.callSuper('toObject'), {
+    toObject: function(propertiesToInclude) {
+      return extend(this.callSuper('toObject', propertiesToInclude), {
         src: this._originalImage.src || this._originalImage._src,
         filters: this.filters.concat()
       });
     },
 
     /**
-     * Returns svg representation of an instance
+     * Returns SVG representation of an instance
      * @method toSVG
-     * @return {string} svg representation of an instance
+     * @return {String} svg representation of an instance
      */
     toSVG: function() {
       return '<g transform="' + this.getSvgTransform() + '">'+
@@ -176,7 +137,7 @@
                   // so that object's center aligns with container's left/top
                   'transform="translate('+ (-this.width/2) + ' ' + (-this.height/2) + ')" ' +
                   'width="' + this.width + '" ' +
-                  'height="' + this.height + '"' + '/>'+
+                  'height="' + this.height + '"' + '></image>' +
               '</g>';
     },
 
@@ -200,17 +161,20 @@
 
     /**
      * Returns a clone of an instance
-     * @mthod clone
+     * @method clone
+     * @param {Array} propertiesToInclude
      * @param {Function} callback Callback is invoked with a clone as a first argument
      */
-    clone: function(callback) {
-      this.constructor.fromObject(this.toObject(), callback);
+    clone: function(callback, propertiesToInclude) {
+      this.constructor.fromObject(this.toObject(propertiesToInclude), callback);
     },
 
     /**
      * Applies filters assigned to this image (from "filters" array)
      * @mthod applyFilters
      * @param {Function} callback Callback is invoked when all filters have been applied and new image is generated
+     * @return {fabric.Image} thisArg
+     * @chainable
      */
     applyFilters: function(callback) {
 
@@ -265,11 +229,13 @@
 
     /**
      * @private
+     * @method _render
+     * @param ctx
      */
     _render: function(ctx) {
       ctx.drawImage(
-        this.getElement(),
-        - this.width / 2,
+        this._element,
+        -this.width / 2,
         -this.height / 2,
         this.width,
         this.height
@@ -278,20 +244,7 @@
 
     /**
      * @private
-     */
-    _adjustWidthHeightToBorders: function(showBorder) {
-      if (showBorder) {
-        this.currentBorder = this.borderwidth;
-        this.width += (2 * this.currentBorder);
-        this.height += (2 * this.currentBorder);
-      }
-      else {
-        this.currentBorder = 0;
-      }
-    },
-
-    /**
-     * @private
+     * @method _resetWidthHeight
      */
     _resetWidthHeight: function() {
       var element = this.getElement();
@@ -303,6 +256,7 @@
     /**
      * The Image class's initialization method. This method is automatically
      * called by the constructor.
+     * @private
      * @method _initElement
      * @param {HTMLImageElement|String} el The element representing the image
      */
@@ -312,17 +266,18 @@
     },
 
     /**
+     * @private
      * @method _initConfig
-     * @param {Object} options Options object
+     * @param {Object} [options] Options object
      */
     _initConfig: function(options) {
       options || (options = { });
       this.setOptions(options);
-      this._setBorder();
       this._setWidthHeight(options);
     },
 
     /**
+     * @private
      * @method _initFilters
      * @param {Object} object Object with filters property
      */
@@ -336,29 +291,17 @@
 
     /**
      * @private
-     */
-    _setBorder: function() {
-      if (this.bordervisibility) {
-        this.currentBorder = this.borderwidth;
-      }
-      else {
-        this.currentBorder = 0;
-      }
-    },
-
-    /**
-     * @private
+     * @method _setWidthHeight
+     * @param {Object} [options] Object with width/height properties
      */
     _setWidthHeight: function(options) {
-      var sidesBorderWidth = 2 * this.currentBorder;
-
       this.width = 'width' in options
         ? options.width
-        : ((this.getElement().width || 0) + sidesBorderWidth);
+        : (this.getElement().width || 0);
 
       this.height = 'height' in options
         ? options.height
-        : ((this.getElement().height || 0) + sidesBorderWidth);
+        : (this.getElement().height || 0);
     },
 
     /**
@@ -378,14 +321,19 @@
    */
   fabric.Image.CSS_CANVAS = "canvas-img";
 
+  /**
+   * Alias for getSrc
+   * @static
+   * @method getSvgSrc
+   */
   fabric.Image.prototype.getSvgSrc = fabric.Image.prototype.getSrc;
 
   /**
    * Creates an instance of fabric.Image from its object representation
    * @static
    * @method fromObject
-   * @param object {Object}
-   * @param callback {Function} optional
+   * @param {Object} object
+   * @param {Function} [callback] Callback to invoke when an image instance is created
    */
   fabric.Image.fromObject = function(object, callback) {
     var img = fabric.document.createElement('img'),
@@ -404,8 +352,15 @@
 
       var instance = new fabric.Image(img, object);
       callback && callback(instance);
-      img = img.onload = null;
-    };
+        img = img.onload = img.onerror = null;
+      };
+
+      /** @ignore */
+      img.onerror = function() {
+        fabric.log('Error loading ' + img.src);
+        callback && callback(null, true);
+        img = img.onload = img.onerror = null;
+      };
     img.src = src;
   };
 
@@ -454,6 +409,11 @@
     fabric.Image.fromURL(parsedAttributes['xlink:href'], callback, extend(parsedAttributes, options));
   };
 
+  /**
+   * Indicates that instances of this type are async
+   * @static
+   * @type Boolean
+   */
   fabric.Image.async = true;
 
 })(typeof exports !== 'undefined' ? exports : this);

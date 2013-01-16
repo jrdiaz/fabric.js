@@ -32,7 +32,7 @@
       _join = Array.prototype.join,
       argsString;
 
-  // Copied from Inkscape svgtopdf, thanks!
+  // Generous contribution by Raph Levien, from libsvg-0.1.0.tar.gz
   function arcToSegments(x, y, rx, ry, large, sweep, rotateX, ox, oy) {
     argsString = _join.call(arguments);
     if (arcToSegmentsCache[argsString]) {
@@ -130,10 +130,6 @@
     fabric.warn('fabric.Path is already defined');
     return;
   }
-  if (!fabric.Object) {
-    fabric.warn('fabric.Path requires fabric.Object');
-    return;
-  }
 
   /**
    * @private
@@ -156,12 +152,14 @@
   }
 
   /**
+   * Path class
    * @class Path
    * @extends fabric.Object
    */
   fabric.Path = fabric.util.createClass(fabric.Object, /** @scope fabric.Path.prototype */ {
 
     /**
+     * Type of an object
      * @property
      * @type String
      */
@@ -192,8 +190,9 @@
       if (!this.path) return;
 
       if (!fromArray) {
-        this._initializeFromString(options);
+        this.path = this._parsePath();
       }
+      this._initializePath(options);
 
       if (options.sourcePath) {
         this.setSourcePath(options.sourcePath);
@@ -202,13 +201,13 @@
 
     /**
      * @private
-     * @method _initializeFromString
+     * @method _initializePath
      */
-    _initializeFromString: function(options) {
+    _initializePath: function (options) {
       var isWidthSet = 'width' in options,
-          isHeightSet = 'height' in options;
-
-      this.path = this._parsePath();
+          isHeightSet = 'height' in options,
+          isLeftSet = 'left' in options,
+          isTopSet = 'top' in options;
 
       if (!isWidthSet || !isHeightSet) {
         extend(this, this._parseDimensions());
@@ -219,6 +218,26 @@
           this.height = options.height;
         }
       }
+      else { //Set center location relative to given height/width if not specified
+        if (!isTopSet) {
+          this.top = this.height / 2;
+        }
+        if (!isLeftSet) {
+          this.left = this.width / 2;
+        }
+      }
+      this.pathOffset = this._calculatePathOffset(isTopSet || isLeftSet); //Save top-left coords as offset
+    },
+
+    /**
+     * @private
+     * @method _calculatePathOffset
+     */
+    _calculatePathOffset: function (positionSet) {
+      return {
+        x: positionSet ? 0 : this.left - (this.width / 2),
+        y: positionSet ? 0 : this.top - (this.height / 2)
+      };
     },
 
     /**
@@ -236,8 +255,8 @@
           tempY,
           tempControlX,
           tempControlY,
-          l = -(this.width / 2),
-          t = -(this.height / 2);
+          l = -((this.width / 2) + this.pathOffset.x),
+          t = -((this.height / 2) + this.pathOffset.y);
 
       for (var i = 0, len = this.path.length; i < len; ++i) {
 
@@ -280,13 +299,15 @@
           case 'm': // moveTo, relative
             x += current[1];
             y += current[2];
-            ctx.moveTo(x + l, y + t);
+            // draw a line if previous command was moveTo as well (otherwise, it will have no effect)
+            ctx[(previous && (previous[0] === 'm' || previous[0] === 'M')) ? 'lineTo' : 'moveTo'](x + l, y + t);
             break;
 
           case 'M': // moveTo, absolute
             x = current[1];
             y = current[2];
-            ctx.moveTo(x + l, y + t);
+            // draw a line if previous command was moveTo as well (otherwise, it will have no effect)
+            ctx[(previous && (previous[0] === 'm' || previous[0] === 'M')) ? 'lineTo' : 'moveTo'](x + l, y + t);
             break;
 
           case 'c': // bezierCurveTo, relative
@@ -322,12 +343,15 @@
             break;
 
           case 's': // shorthand cubic bezierCurveTo, relative
+
             // transform to absolute x,y
             tempX = x + current[3];
             tempY = y + current[4];
+
             // calculate reflection of previous control points
-            controlX = 2 * x - controlX;
-            controlY = 2 * y - controlY;
+            controlX = controlX ? (2 * x - controlX) : x;
+            controlY = controlY ? (2 * y - controlY) : y;
+
             ctx.bezierCurveTo(
               controlX + l,
               controlY + t,
@@ -560,10 +584,11 @@
     /**
      * Returns object representation of an instance
      * @method toObject
-     * @return {Object}
+     * @param {Array} propertiesToInclude
+     * @return {Object} object representation of an instance
      */
-    toObject: function() {
-      var o = extend(this.callSuper('toObject'), {
+    toObject: function(propertiesToInclude) {
+      var o = extend(this.callSuper('toObject', propertiesToInclude), {
         path: this.path
       });
       if (this.sourcePath) {
@@ -578,10 +603,11 @@
     /**
      * Returns dataless object representation of an instance
      * @method toDatalessObject
-     * @return {Object}
+     * @param {Array} propertiesToInclude
+     * @return {Object} object representation of an instance
      */
-    toDatalessObject: function() {
-      var o = this.toObject();
+    toDatalessObject: function(propertiesToInclude) {
+      var o = this.toObject(propertiesToInclude);
       if (this.sourcePath) {
         o.path = this.sourcePath;
       }
@@ -592,7 +618,7 @@
     /**
      * Returns svg representation of an instance
      * @method toSVG
-     * @return {string} svg representation of an instance
+     * @return {String} svg representation of an instance
      */
     toSVG: function() {
       var chunks = [];
@@ -602,7 +628,7 @@
       var path = chunks.join(' ');
 
       return [
-        '<g transform="', this.getSvgTransform(), '">',
+        '<g transform="', (this.group ? '' : this.getSvgTransform()), '">',
           '<path ',
             'width="', this.width, '" height="', this.height, '" ',
             'd="', path, '" ',
@@ -712,18 +738,20 @@
 
       var minX = min(aX),
           minY = min(aY),
-          deltaX = 0,
-          deltaY = 0;
+          maxX = max(aX),
+          maxY = max(aY),
+          deltaX = maxX - minX,
+          deltaY = maxY - minY;
 
       var o = {
-        top: minY - deltaY,
-        left: minX - deltaX,
+        top: minY + deltaY / 2,
+        left: minX + deltaX / 2,
         bottom: max(aY) - deltaY,
         right: max(aX) - deltaX
       };
 
-      o.width = o.right - o.left;
-      o.height = o.bottom - o.top;
+      o.width = deltaX;
+      o.height = deltaY;
 
       return o;
     }
@@ -751,7 +779,7 @@
    * @static
    * @method fabric.Path.fromElement
    * @param {SVGElement} element to parse
-   * @param {Object} options object
+   * @param {Object} [options] Options object
    * @return {fabric.Path} Instance of fabric.Path
    */
   fabric.Path.fromElement = function(element, options) {

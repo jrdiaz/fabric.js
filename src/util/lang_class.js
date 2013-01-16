@@ -13,7 +13,9 @@
   var addMethods = function(klass, source, parent) {
     for (var property in source) {
 
-      if (property in klass.prototype && typeof klass.prototype[property] === 'function') {
+      if (property in klass.prototype &&
+          typeof klass.prototype[property] === 'function' &&
+          (source[property] + '').indexOf('callSuper') > -1) {
 
         klass.prototype[property] = (function(property) {
           return function() {
@@ -46,9 +48,19 @@
 
   function Subclass() { }
 
+  function callSuper(methodName) {
+    var fn = this.constructor.superclass.prototype[methodName];
+    return (arguments.length > 1)
+      ? fn.apply(this, slice.call(arguments, 1))
+      : fn.call(this);
+  }
+
   /**
-   * Helper for creation of "classes"
+   * Helper for creation of "classes". Note that pr
    * @method createClass
+   * @param parent optional "Class" to inherit from
+   * @param properties Properties shared by all instances of this class
+   *                  (be careful modifying objects defined here as this would affect all instances)
    * @memberOf fabric.util
    */
   function createClass() {
@@ -77,6 +89,7 @@
       klass.prototype.initialize = emptyFunction;
     }
     klass.prototype.constructor = klass;
+    klass.prototype.callSuper = callSuper;
     return klass;
   }
 
