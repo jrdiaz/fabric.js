@@ -11,103 +11,118 @@
     fabric.warn('fabric.Text is already defined');
     return;
   }
-  if (!fabric.Object) {
-    fabric.warn('fabric.Text requires fabric.Object');
-    return;
-  }
 
   /**
+   * Text class
    * @class Text
    * @extends fabric.Object
    */
   fabric.Text = fabric.util.createClass(fabric.Object, /** @scope fabric.Text.prototype */ {
 
     /**
+     * Font size
      * @property
      * @type Number
      */
-    fontSize:         40,
+    fontSize:             40,
 
     /**
+     * Font weight (e.g. bold, normal, 400, 600, 800)
      * @property
      * @type Number
      */
-    fontWeight:       100,
+    fontWeight:           400,
 
     /**
+     * Font family
      * @property
      * @type String
      */
-    fontFamily:       'Times New Roman',
+    fontFamily:           'Times New Roman',
 
     /**
+     * Text decoration (e.g. underline, overline)
      * @property
      * @type String
      */
-    textDecoration:   '',
+    textDecoration:       '',
 
     /**
+     * Text shadow
      * @property
      * @type String | null
      */
-    textShadow:       '',
+    textShadow:           '',
 
     /**
-     * Determines text alignment. Possible values: "left", "center", or "right".
+     * Text alignment. Possible values: "left", "center", or "right".
      * @property
      * @type String
      */
-    textAlign:        'left',
+    textAlign:            'left',
 
     /**
+     * Font style (e.g. italic)
      * @property
      * @type String
      */
-    fontStyle:        '',
+    fontStyle:            '',
 
     /**
+     * Line height
      * @property
      * @type Number
      */
-    lineHeight:       1.3,
+    lineHeight:           1.3,
 
     /**
+     * Stroke style. When specified, text is rendered with stroke
      * @property
      * @type String
      */
-    strokeStyle:      '',
+    strokeStyle:          '',
 
     /**
+     * Stroke width
      * @property
      * @type Number
      */
-    strokeWidth:      1,
+    strokeWidth:          1,
 
     /**
+     * Background color of an entire text box
      * @property
      * @type String
      */
-    backgroundColor:  '',
-
+    backgroundColor:      '',
 
     /**
+     * Background color of text lines
+     * @property
+     * @type String
+     */
+    textBackgroundColor:  '',
+
+    /**
+     * URL of a font file, when using Cufon
      * @property
      * @type String | null
      */
-    path:             null,
+    path:                 null,
 
     /**
+     * Type of an object
      * @property
      * @type String
      */
-    type:             'text',
+    type:                 'text',
 
     /**
      * Indicates whether canvas native text methods should be used to render text (otherwise, Cufon is used)
      * @property
      * @type Boolean
      */
-     useNative:       true,
+     useNative:           true,
 
     /**
      * Constructor
@@ -117,10 +132,11 @@
      * @return {fabric.Text} thisArg
      */
     initialize: function(text, options) {
+      options = options || { };
+
       this._initStateProperties();
       this.text = text;
-      this.setOptions(options || { });
-      this._theta = this.angle * Math.PI / 180;
+      this.setOptions(options);
       this._initDimensions();
       this.setCoords();
     },
@@ -162,6 +178,7 @@
         'strokeStyle',
         'strokeWidth',
         'backgroundColor',
+        'textBackgroundColor',
         'useNative'
       );
       fabric.util.removeFromArray(this.stateProperties, 'width');
@@ -222,7 +239,8 @@
         lineHeight: this.lineHeight,
         strokeStyle: this.strokeStyle,
         strokeWidth: this.strokeWidth,
-        backgroundColor: this.backgroundColor
+        backgroundColor: this.backgroundColor,
+        textBackgroundColor: this.textBackgroundColor
       });
 
       // update width, height
@@ -258,7 +276,7 @@
 
       this._renderTextBackground(ctx, textLines);
 
-      if (this.textAlign !== 'left') {
+      if (this.textAlign !== 'left' && this.textAlign !== 'justify') {
         ctx.save();
         ctx.translate(this.textAlign === 'center' ? (this.width / 2) : this.width, 0);
       }
@@ -268,7 +286,7 @@
       this.textShadow && ctx.restore();
 
       this._renderTextStroke(ctx, textLines);
-      if (this.textAlign !== 'left') {
+      if (this.textAlign !== 'left' && this.textAlign !== 'justify') {
         ctx.restore();
       }
 
@@ -288,11 +306,11 @@
 
       for (var i = 0, len = textLines.length; i < len; i++) {
 
-        var lineWidth = ctx.measureText(textLines[i]).width;
+        var lineWidth = this._getLineWidth(ctx, textLines[i]);
         var lineLeftOffset = this._getLineLeftOffset(lineWidth);
 
         this._boundaries.push({
-          height: this.fontSize,
+          height: this.fontSize * this.lineHeight,
           width: lineWidth,
           left: lineLeftOffset
         });
@@ -304,10 +322,12 @@
      * @method _setTextStyles
      */
     _setTextStyles: function(ctx) {
-      ctx.fillStyle = this.fill;
+      ctx.fillStyle = this.fill.toLiveGradient
+          ? this.fill.toLiveGradient(ctx)
+          : this.fill;
       ctx.strokeStyle = this.strokeStyle;
       ctx.lineWidth = this.strokeWidth;
-      ctx.textBaseline = 'top';
+      ctx.textBaseline = 'alphabetic';
       ctx.textAlign = this.textAlign;
       ctx.font = this._getFontDeclaration();
     },
@@ -372,13 +392,59 @@
       }
     },
 
+    /**
+     * @private
+     * @method _drawTextLine
+     * @param method
+     * @param ctx
+     * @param line
+     * @param left
+     * param top
+     */
+    _drawTextLine: function(method, ctx, line, left, top) {
+
+      // short-circuit
+      if (this.textAlign !== 'justify') {
+        ctx[method](line, left, top);
+        return;
+      }
+
+      var lineWidth = ctx.measureText(line).width;
+      var totalWidth = this.width;
+
+      if (totalWidth > lineWidth) {
+        // stretch the line
+
+        var words = line.split(/\s+/);
+        var wordsWidth = ctx.measureText(line.replace(/\s+/g, '')).width;
+        var widthDiff = totalWidth - wordsWidth;
+        var numSpaces = words.length - 1;
+        var spaceWidth = widthDiff / numSpaces;
+
+        var leftOffset = 0;
+        for (var i = 0, len = words.length; i < len; i++) {
+          ctx[method](words[i], left + leftOffset, top);
+          leftOffset += ctx.measureText(words[i]).width + spaceWidth;
+        }
+      }
+      else {
+        ctx[method](line, left, top);
+      }
+    },
+
+    /**
+     * @private
+     * @method _renderTextFill
+     */
     _renderTextFill: function(ctx, textLines) {
       this._boundaries = [ ];
       for (var i = 0, len = textLines.length; i < len; i++) {
-        ctx.fillText(
+        this._drawTextLine(
+          'fillText',
+          ctx,
           textLines[i],
           -this.width / 2,
-          (-this.height / 2) + (i * this.fontSize * this.lineHeight)
+          (-this.height / 2) + (i * this.fontSize * this.lineHeight) + this.fontSize
         );
       }
     },
@@ -389,36 +455,72 @@
      */
     _renderTextStroke: function(ctx, textLines) {
       if (this.strokeStyle) {
+        ctx.beginPath();
         for (var i = 0, len = textLines.length; i < len; i++) {
-          ctx.strokeText(
+          this._drawTextLine(
+            'strokeText',
+            ctx,
             textLines[i],
             -this.width / 2,
-            (-this.height / 2) + (i * this.fontSize * this.lineHeight)
+            (-this.height / 2) + (i * this.fontSize * this.lineHeight) + this.fontSize
           );
         }
+        ctx.closePath();
       }
     },
 
     /**
      * @private
-     * @_renderTextBackground
+     * @method _renderTextBackground
      */
     _renderTextBackground: function(ctx, textLines) {
+      this._renderTextBoxBackground(ctx);
+      this._renderTextLinesBackground(ctx, textLines);
+    },
+
+    /**
+     * @private
+     * @method _renderTextBoxBackground
+     */
+    _renderTextBoxBackground: function(ctx) {
       if (this.backgroundColor) {
         ctx.save();
         ctx.fillStyle = this.backgroundColor;
 
+        ctx.fillRect(
+          (-this.width / 2),
+          (-this.height / 2),
+          this.width,
+          this.height
+        );
+
+        ctx.restore();
+      }
+    },
+
+    /**
+     * @private
+     * @method _renderTextLinesBackground
+     */
+    _renderTextLinesBackground: function(ctx, textLines) {
+      if (this.textBackgroundColor) {
+        ctx.save();
+        ctx.fillStyle = this.textBackgroundColor;
+
         for (var i = 0, len = textLines.length; i < len; i++) {
 
-          var lineWidth = ctx.measureText(textLines[i]).width;
-          var lineLeftOffset = this._getLineLeftOffset(lineWidth);
+          if (textLines[i] !== '') {
 
-          ctx.fillRect(
-            (-this.width / 2) + lineLeftOffset,
-            (-this.height / 2) + (i * this.fontSize * this.lineHeight),
-            lineWidth,
-            this.fontSize
-          );
+            var lineWidth = this._getLineWidth(ctx, textLines[i]);
+            var lineLeftOffset = this._getLineLeftOffset(lineWidth);
+
+            ctx.fillRect(
+              (-this.width / 2) + lineLeftOffset,
+              (-this.height / 2) + (i * this.fontSize * this.lineHeight),
+              lineWidth,
+              this.fontSize * this.lineHeight
+            );
+          }
         }
         ctx.restore();
       }
@@ -440,6 +542,18 @@
 
     /**
      * @private
+     * @method _getLineWidth
+     * @param ctx
+     * @param line
+     */
+    _getLineWidth: function(ctx, line) {
+      return this.textAlign === 'justify'
+        ? this.width
+        : ctx.measureText(line).width;
+    },
+
+    /**
+     * @private
      * @method _renderTextDecoration
      */
     _renderTextDecoration: function(ctx, textLines) {
@@ -447,10 +561,11 @@
       var halfOfVerticalBox = this._getTextHeight(ctx, textLines) / 2;
       var _this = this;
 
+      /** @ignore */
       function renderLinesAtOffset(offset) {
         for (var i = 0, len = textLines.length; i < len; i++) {
 
-          var lineWidth = ctx.measureText(textLines[i]).width;
+          var lineWidth = _this._getLineWidth(ctx, textLines[i]);
           var lineLeftOffset = _this._getLineLeftOffset(lineWidth);
 
           ctx.fillRect(
@@ -530,31 +645,33 @@
     /**
      * Returns object representation of an instance
      * @method toObject
-     * @return {Object} Object representation of text object
+     * @param {Array} propertiesToInclude
+     * @return {Object} object representation of an instance
      */
-    toObject: function() {
-      return extend(this.callSuper('toObject'), {
-        text:             this.text,
-        fontSize:         this.fontSize,
-        fontWeight:       this.fontWeight,
-        fontFamily:       this.fontFamily,
-        fontStyle:        this.fontStyle,
-        lineHeight:       this.lineHeight,
-        textDecoration:   this.textDecoration,
-        textShadow:       this.textShadow,
-        textAlign:        this.textAlign,
-        path:             this.path,
-        strokeStyle:      this.strokeStyle,
-        strokeWidth:      this.strokeWidth,
-        backgroundColor:  this.backgroundColor,
-        useNative:        this.useNative
+    toObject: function(propertiesToInclude) {
+      return extend(this.callSuper('toObject', propertiesToInclude), {
+        text:                 this.text,
+        fontSize:             this.fontSize,
+        fontWeight:           this.fontWeight,
+        fontFamily:           this.fontFamily,
+        fontStyle:            this.fontStyle,
+        lineHeight:           this.lineHeight,
+        textDecoration:       this.textDecoration,
+        textShadow:           this.textShadow,
+        textAlign:            this.textAlign,
+        path:                 this.path,
+        strokeStyle:          this.strokeStyle,
+        strokeWidth:          this.strokeWidth,
+        backgroundColor:      this.backgroundColor,
+        textBackgroundColor:  this.textBackgroundColor,
+        useNative:            this.useNative
       });
     },
 
     /**
-     * Returns svg representation of an instance
+     * Returns SVG representation of an instance
      * @method toSVG
-     * @return {string} svg representation of an instance
+     * @return {String} svg representation of an instance
      */
     toSVG: function() {
 
@@ -593,6 +710,10 @@
       ].join('');
     },
 
+    /**
+     * @private
+     * @method _getSVGShadows
+     */
     _getSVGShadows: function(lineTopOffset, textLines) {
       var shadowSpans = [], j, i, jlen, ilen, lineTopOffsetMultiplier = 1;
 
@@ -626,35 +747,56 @@
       return shadowSpans;
     },
 
+    /**
+     * @private
+     * @method _getSVGTextAndBg
+     */
     _getSVGTextAndBg: function(lineTopOffset, textLeftOffset, textLines) {
       var textSpans = [ ], textBgRects = [ ], i, lineLeftOffset, len, lineTopOffsetMultiplier = 1;
 
-      // text and background
+      // bounding-box background
+      if (this.backgroundColor && this._boundaries) {
+        textBgRects.push(
+          '<rect ',
+            this._getFillAttributes(this.backgroundColor),
+            ' x="',
+            toFixed(-this.width / 2, 2),
+            '" y="',
+            toFixed(-this.height / 2, 2),
+            '" width="',
+            toFixed(this.width, 2),
+            '" height="',
+            toFixed(this.height, 2),
+          '"></rect>');
+      }
+
+      // text and text-background
       for (i = 0, len = textLines.length; i < len; i++) {
         if (textLines[i] !== '') {
           lineLeftOffset = (this._boundaries && this._boundaries[i]) ? toFixed(this._boundaries[i].left, 2) : 0;
           textSpans.push(
             '<tspan x="',
-            lineLeftOffset, '" ',
-            (i === 0 || this.useNative ? 'y' : 'dy'), '="',
-            toFixed(this.useNative ? ((lineTopOffset * i) - this.height / 2) : (lineTopOffset * lineTopOffsetMultiplier), 2) , '" ',
-            // doing this on <tspan> elements since setting opacity on containing <text> one doesn't work in Illustrator
-            this._getFillAttributes(this.fill), '>',
-            fabric.util.string.escapeXml(textLines[i]),
+              lineLeftOffset, '" ',
+              (i === 0 || this.useNative ? 'y' : 'dy'), '="',
+              toFixed(this.useNative ? ((lineTopOffset * i) - this.height / 2) : (lineTopOffset * lineTopOffsetMultiplier), 2) , '" ',
+              // doing this on <tspan> elements since setting opacity on containing <text> one doesn't work in Illustrator
+              this._getFillAttributes(this.fill), '>',
+              fabric.util.string.escapeXml(textLines[i]),
             '</tspan>'
           );
           lineTopOffsetMultiplier = 1;
-        } else {
+        }
+        else {
           // in some environments (e.g. IE 7 & 8) empty tspans are completely ignored, using a lineTopOffsetMultiplier
           // prevents empty tspans
           lineTopOffsetMultiplier++;
         }
 
-        if (!this.backgroundColor || !this._boundaries) continue;
+        if (!this.textBackgroundColor || !this._boundaries) continue;
 
         textBgRects.push(
           '<rect ',
-            this._getFillAttributes(this.backgroundColor),
+            this._getFillAttributes(this.textBackgroundColor),
             ' x="',
             toFixed(textLeftOffset + this._boundaries[i].left, 2),
             '" y="',
@@ -672,8 +814,13 @@
       };
     },
 
-    // Adobe Illustrator (at least CS5) is unable to render rgba()-based fill values
-    // we work around it by "moving" alpha channel into opacity attribute and setting fill's alpha to 1
+    /**
+     * Adobe Illustrator (at least CS5) is unable to render rgba()-based fill values
+     * we work around it by "moving" alpha channel into opacity attribute and setting fill's alpha to 1
+     *
+     * @private
+     * @method _getFillAttributes
+     */
     _getFillAttributes: function(value) {
       var fillColor = value ? new fabric.Color(value) : '';
       if (!fillColor || !fillColor.getSource() || fillColor.getAlpha() === 1) {
@@ -748,7 +895,7 @@
   });
 
   /**
-   * List of attribute names to account for when parsing SVG element (used by `fabric.Text.fromElement`)
+   * List of attribute names to account for when parsing SVG element (used by {@link fabric.Text.fromElement})
    * @static
    */
   fabric.Text.ATTRIBUTE_NAMES =
@@ -775,13 +922,26 @@
    * @return {fabric.Text} an instance
    */
   fabric.Text.fromElement = function(element, options) {
+
     if (!element) {
       return null;
     }
 
     var parsedAttributes = fabric.parseAttributes(element, fabric.Text.ATTRIBUTE_NAMES);
     options = fabric.util.object.extend((options ? fabric.util.object.clone(options) : { }), parsedAttributes);
+
     var text = new fabric.Text(element.textContent, options);
+
+    /*
+      Adjust positioning:
+        x/y attributes in SVG correspond to the bottom-left corner of text bounding box
+        top/left properties in Fabric correspond to center point of text bounding box
+    */
+
+    text.set({
+      left: text.getLeft() + text.getWidth() / 2,
+      top: text.getTop() - text.getHeight() / 2
+    });
 
     return text;
   };

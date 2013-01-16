@@ -12,12 +12,14 @@
   }
 
   /**
+   * Line class
    * @class Line
    * @extends fabric.Object
    */
   fabric.Line = fabric.util.createClass(fabric.Object, /** @scope fabric.Line.prototype */ {
 
     /**
+     * Type of an object
      * @property
      * @type String
      */
@@ -26,11 +28,13 @@
     /**
      * Constructor
      * @method initialize
-     * @param {Array} points Array of points
+     * @param {Array} [points] Array of points
      * @param {Object} [options] Options object
      * @return {fabric.Line} thisArg
      */
     initialize: function(points, options) {
+      options = options || { };
+
       if (!points) {
         points = [0, 0, 0, 0];
       }
@@ -48,7 +52,7 @@
     /**
      * @private
      * @method _setWidthHeight
-     * @param {Object} options
+     * @param {Object} [options] Options
      */
     _setWidthHeight: function(options) {
       options || (options = { });
@@ -113,10 +117,11 @@
     /**
      * Returns object representation of an instance
      * @methd toObject
-     * @return {Object}
+     * @param {Array} propertiesToInclude
+     * @return {Object} object representation of an instance
      */
-    toObject: function() {
-      return extend(this.callSuper('toObject'), {
+    toObject: function(propertiesToInclude) {
+      return extend(this.callSuper('toObject', propertiesToInclude), {
         x1: this.get('x1'),
         y1: this.get('y1'),
         x2: this.get('x2'),
@@ -125,9 +130,9 @@
     },
 
     /**
-     * Returns svg representation of an instance
+     * Returns SVG representation of an instance
      * @method toSVG
-     * @return {string} svg representation of an instance
+     * @return {String} svg representation of an instance
      */
     toSVG: function() {
       return [
@@ -143,7 +148,7 @@
   });
 
   /**
-   * List of attribute names to account for when parsing SVG element (used by `fabric.Line.fromElement`)
+   * List of attribute names to account for when parsing SVG element (used by {@link fabric.Line.fromElement})
    * @static
    * @see http://www.w3.org/TR/SVG/shapes.html#LineElement
    */

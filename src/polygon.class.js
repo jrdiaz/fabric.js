@@ -14,12 +14,14 @@
   }
 
   /**
+   * Polygon class
    * @class Polygon
    * @extends fabric.Object
    */
   fabric.Polygon = fabric.util.createClass(fabric.Object, /** @scope fabric.Polygon.prototype */ {
 
     /**
+     * Type of an object
      * @property
      * @type String
      */
@@ -29,7 +31,7 @@
      * Constructor
      * @method initialize
      * @param {Array} points Array of points
-     * @param {Object} options Options object
+     * @param {Object} [options] Options object
      * @return {fabric.Polygon} thisArg
      */
     initialize: function(points, options) {
@@ -61,10 +63,11 @@
     /**
      * Returns object representation of an instance
      * @method toObject
+     * @param {Array} propertiesToInclude
      * @return {Object} object representation of an instance
      */
-    toObject: function() {
-      return extend(this.callSuper('toObject'), {
+    toObject: function(propertiesToInclude) {
+      return extend(this.callSuper('toObject', propertiesToInclude), {
         points: this.points.concat()
       });
     },
@@ -72,7 +75,7 @@
     /**
      * Returns svg representation of an instance
      * @method toSVG
-     * @return {string} svg representation of an instance
+     * @return {String} svg representation of an instance
      */
     toSVG: function() {
       var points = [];
@@ -129,11 +132,11 @@
   fabric.Polygon.ATTRIBUTE_NAMES = 'fill fill-opacity opacity stroke stroke-width transform'.split(' ');
 
   /**
-   * Returns fabric.Polygon instance from an SVG element
+   * Returns {@link fabric.Polygon} instance from an SVG element
    * @static
    * @method fabric.Polygon.fromElement
    * @param {SVGElement} element Element to parse
-   * @param {Object} options Options object
+   * @param {Object} [options] Options object
    * @return {fabric.Polygon}
    */
   fabric.Polygon.fromElement = function(element, options) {

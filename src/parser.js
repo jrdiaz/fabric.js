@@ -283,14 +283,22 @@
 
     if (typeof style === 'string') {
       style = style.replace(/;$/, '').split(';').forEach(function (current) {
+
         var attr = current.split(':');
-        oStyle[normalizeAttr(attr[0].trim().toLowerCase())] = attr[1].trim();
+        var value = attr[1].trim();
+
+        // TODO: need to normalize em, %, pt, etc. to px (!)
+        var parsed = parseFloat(value);
+
+        oStyle[normalizeAttr(attr[0].trim().toLowerCase())] = isNaN(parsed) ? value : parsed;
       });
     }
     else {
       for (var prop in style) {
         if (typeof style[prop] === 'undefined') continue;
-        oStyle[normalizeAttr(prop.toLowerCase())] = style[prop];
+
+        var parsed = parseFloat(style[prop]);
+        oStyle[normalizeAttr(prop.toLowerCase())] = isNaN(parsed) ? style[prop] : parsed;
       }
     }
 
@@ -320,7 +328,7 @@
    * @method parseElements
    * @param {Array} elements Array of elements to parse
    * @param {Function} callback Being passed an array of fabric instances (transformed from SVG elements)
-   * @param {Object} options Options object
+   * @param {Object} [options] Options object
    * @param {Function} [reviver] Method for further parsing of SVG elements, called after each fabric object created.
    */
   function parseElements(elements, callback, options, reviver) {
@@ -414,6 +422,9 @@
     return allRules;
   }
 
+  /**
+   * @private
+   */
   function getGlobalStylesForElement(element) {
     var nodeName = element.nodeName,
         className = element.getAttribute('class'),
@@ -573,6 +584,7 @@
    /**
     * Takes url corresponding to an SVG document, and parses it into a set of fabric objects
     * @method loadSVGFromURL
+    * @memberof fabric
     * @param {String} url
     * @param {Function} callback
     * @param {Function} [reviver] Method for further parsing of SVG elements, called after each fabric object created.
@@ -635,6 +647,7 @@
   /**
     * Takes string corresponding to an SVG document, and parses it into a set of fabric objects
     * @method loadSVGFromString
+    * @memberof fabric
     * @param {String} string
     * @param {Function} callback
     * @param {Function} [reviver] Method for further parsing of SVG elements, called after each fabric object created.
@@ -660,6 +673,12 @@
     }, reviver);
   }
 
+  /**
+   * Creates markup containing SVG font faces
+   * @method createSVGFontFacesMarkup
+   * @param {Array} objects Array of fabric objects
+   * @return {String}
+   */
   function createSVGFontFacesMarkup(objects) {
     var markup = '';
 

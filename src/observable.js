@@ -40,7 +40,12 @@ fabric.Observable = {
       this.__eventListeners = { };
     }
     if (this.__eventListeners[eventName]) {
-      fabric.util.removeFromArray(this.__eventListeners[eventName], handler);
+      if (handler) {
+        fabric.util.removeFromArray(this.__eventListeners[eventName], handler);
+      }
+      else {
+        this.__eventListeners[eventName].length = 0;
+      }
     }
   },
 
@@ -66,12 +71,13 @@ fabric.Observable = {
 /**
  * Alias for observe
  * @method observe
- * @memberOf fabric.Observable
+ * @type function
  */
 fabric.Observable.on = fabric.Observable.observe;
 
 /**
  * Alias for stopObserving
  * @method off
+ * @type function
  */
 fabric.Observable.off = fabric.Observable.stopObserving;

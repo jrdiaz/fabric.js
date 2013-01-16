@@ -124,6 +124,8 @@
 
     var expectedObject = {
       'type': 'group',
+      'originX': 'center',
+      'originY': 'center',
       'left': 80,
       'top': 117.5,
       'width': 70,
@@ -138,7 +140,7 @@
       'selectable': true,
       'hasControls': true,
       'hasBorders': true,
-      'hasRotatingPoint': false,
+      'hasRotatingPoint': true,
       'transparentCorners': true,
       'perPixelTargetFind': false,
       'angle': 0,
@@ -300,6 +302,28 @@
 
       start();
     });
+  });
+
+  test('get with locked objects', function() {
+    var group = makeGroupWith2Objects();
+
+    equal(group.get('lockMovementX'), false);
+
+    group.objects[0].lockMovementX = true;
+    equal(group.get('lockMovementX'), true);
+
+    group.objects[0].lockMovementX = false;
+    equal(group.get('lockMovementX'), false);
+
+    group.set('lockMovementX', true);
+    equal(group.get('lockMovementX'), true);
+
+    group.set('lockMovementX', false);
+    group.objects[0].lockMovementY = true;
+    group.objects[1].lockRotation = true;
+
+    equal(group.get('lockMovementY'), true);
+    equal(group.get('lockRotation'), true);
   });
 
   // asyncTest('cloning group with image', function() {

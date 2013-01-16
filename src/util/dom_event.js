@@ -12,11 +12,6 @@
     return true;
   }
   var getUniqueId = (function () {
-    if (typeof fabric.document.documentElement.uniqueID !== 'undefined') {
-      return function (element) {
-        return element.uniqueID;
-      };
-    }
     var uid = 0;
     return function (element) {
       return element.__uniqueID || (element.__uniqueID = 'uniqueID__' + uid++);
@@ -179,29 +174,37 @@
    * @param {Event} event
    */
   function getPointer(event) {
-    // TODO (kangax): this method needs fixing
-    return { x: pointerX(event), y: pointerY(event) };
+    event || (event = fabric.window.event);
+
+    var element = event.target || (typeof event.srcElement !== 'unknown' ? event.srcElement : null),
+        scrollLeft = 0,
+        scrollTop = 0,
+        firstFixedAncestor;
+
+    while (element && element.parentNode && !firstFixedAncestor) {
+        element = element.parentNode;
+
+        if (element !== fabric.document && fabric.util.getElementPosition(element) === 'fixed') firstFixedAncestor = element;
+
+        scrollLeft += element.scrollLeft || 0;
+        scrollTop += element.scrollTop || 0;
+    }
+
+    return {
+        x: pointerX(event) + scrollLeft,
+        y: pointerY(event) + scrollTop
+    };
   }
 
   var pointerX = function(event) {
-    var docElement = fabric.document.documentElement,
-        body = fabric.document.body || { scrollLeft: 0 };
-
     // looks like in IE (<9) clientX at certain point (apparently when mouseup fires on VML element)
     // is represented as COM object, with all the consequences, like "unknown" type and error on [[Get]]
     // need to investigate later
-    return event.pageX || ((typeof event.clientX !== 'unknown' ? event.clientX : 0) +
-      (docElement.scrollLeft || body.scrollLeft) -
-      (docElement.clientLeft || 0));
+    return (typeof event.clientX !== 'unknown' ? event.clientX : 0);
   };
 
   var pointerY = function(event) {
-    var docElement = fabric.document.documentElement,
-        body = fabric.document.body || { scrollTop: 0 };
-
-    return event.pageY || ((typeof event.clientY !== 'unknown' ? event.clientY : 0) +
-       (docElement.scrollTop || body.scrollTop) -
-       (docElement.clientTop || 0));
+    return (typeof event.clientY !== 'unknown' ? event.clientY : 0);
   };
 
   if (fabric.isTouchSupported) {

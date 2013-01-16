@@ -51,6 +51,40 @@
   }
 
   /**
+   * Transforms radians to degrees.
+   * @static
+   * @method radiansToDegrees
+   * @memberOf fabric.util
+   * @param {Number} radians value in radians
+   * @return {Number} value in degrees
+   */
+  function radiansToDegrees(radians) {
+    return radians / PiBy180;
+  }
+
+  /**
+   * Rotates `point` around `origin` with `radians`
+   * @static
+   * @method rotatePoint
+   * @memberOf fabric.util
+   * @param {fabric.Point} The point to rotate
+   * @param {fabric.Point} The origin of the rotation
+   * @param {Number} The radians of the angle for the rotation
+   * @return {fabric.Point} The new rotated point
+   */
+  function rotatePoint(point, origin, radians) {
+    var sin = Math.sin(radians),
+        cos = Math.cos(radians);
+
+    point.subtractEquals(origin);
+
+    var rx = point.x * cos - point.y * sin;
+    var ry = point.x * sin + point.y * cos;
+
+    return new fabric.Point(rx, ry).addEquals(origin);
+  }
+
+  /**
    * A wrapper around Number#toFixed, which contrary to native method returns number, not string.
    * @static
    * @method toFixed
@@ -157,6 +191,14 @@
     }
   }
 
+  /**
+   * Creates corresponding fabric instances from their object representations
+   * @static
+   * @memberOf fabric.util
+   * @method enlivenObjects
+   * @param {Array} objects Objects to enliven
+   * @param {Function} callback Callback to invoke when all objects are created
+   */
   function enlivenObjects(objects, callback) {
 
     function getKlass(type) {
@@ -181,8 +223,10 @@
       }
       var klass = getKlass(o.type);
       if (klass.async) {
-        klass.fromObject(o, function (o) {
-          enlivenedObjects[index] = o;
+        klass.fromObject(o, function (o, error) {
+          if (!error) {
+            enlivenedObjects[index] = o;
+          }
           onLoaded();
         });
       }
@@ -198,14 +242,35 @@
    * @static
    * @memberOf fabric.util
    * @method groupSVGElements
-   * @param {Array} elements
-   * @param {Object} options optional
-   * @return {String} path optional
+   * @param {Array} elements SVG elements to group
+   * @param {Object} [options] Options object
+   * @return {fabric.Object|fabric.PathGroup}
    */
   function groupSVGElements(elements, options, path) {
-    var object = elements.length > 1
-      ? new fabric.PathGroup(elements, options)
-      : elements[0];
+    var object;
+
+    if (elements.length > 1) {
+      var hasText = elements.some(function(el) { return el.type === 'text'; });
+
+      if (hasText) {
+        object = new fabric.Group([ ], options);
+        elements.reverse().forEach(function(obj) {
+          if (obj.cx) {
+            obj.left = obj.cx;
+          }
+          if (obj.cy) {
+            obj.top = obj.cy;
+          }
+          object.addWithUpdate(obj);
+        });
+      }
+      else {
+        object = new fabric.PathGroup(elements, options);
+      }
+    }
+    else {
+      object = elements[0];
+    }
 
     if (typeof path !== 'undefined') {
       object.setSourcePath(path);
@@ -213,8 +278,27 @@
     return object;
   }
 
+  /**
+   * Populates an object with properties of another object
+   * @static
+   * @memberOf fabric.util
+   * @method populateWithProperties
+   * @param {Object} source Source object
+   * @param {Object} destination Destination object
+   * @return {Array} properties Propertie names to include
+   */
+  function populateWithProperties(source, destination, properties) {
+    if (properties && Object.prototype.toString.call(properties) === '[object Array]') {
+      for (var i = 0, len = properties.length; i < len; i++) {
+        destination[properties[i]] = source[properties[i]];
+      }
+    }
+  }
+
   fabric.util.removeFromArray = removeFromArray;
   fabric.util.degreesToRadians = degreesToRadians;
+  fabric.util.radiansToDegrees = radiansToDegrees;
+  fabric.util.rotatePoint = rotatePoint;
   fabric.util.toFixed = toFixed;
   fabric.util.getRandomInt = getRandomInt;
   fabric.util.falseFunction = falseFunction;
@@ -223,4 +307,5 @@
   fabric.util.loadImage = loadImage;
   fabric.util.enlivenObjects = enlivenObjects;
   fabric.util.groupSVGElements = groupSVGElements;
+  fabric.util.populateWithProperties = populateWithProperties;
 })();

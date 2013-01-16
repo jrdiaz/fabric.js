@@ -12,12 +12,14 @@
   }
 
   /**
+   * Ellipse class
    * @class Ellipse
    * @extends fabric.Object
    */
   fabric.Ellipse = fabric.util.createClass(fabric.Object, /** @scope fabric.Ellipse.prototype */ {
 
     /**
+     * Type of an object
      * @property
      * @type String
      */
@@ -27,7 +29,7 @@
      * Constructor
      * @method initialize
      * @param {Object} [options] Options object
-     * @return {Object} thisArg
+     * @return {fabric.Ellipse} thisArg
      */
     initialize: function(options) {
       options = options || { };
@@ -44,10 +46,11 @@
     /**
      * Returns object representation of an instance
      * @method toObject
+     * @param {Array} propertiesToInclude
      * @return {Object} object representation of an instance
      */
-    toObject: function() {
-      return extend(this.callSuper('toObject'), {
+    toObject: function(propertiesToInclude) {
+      return extend(this.callSuper('toObject', propertiesToInclude), {
         rx: this.get('rx'),
         ry: this.get('ry')
       });
@@ -56,7 +59,7 @@
     /**
      * Returns svg representation of an instance
      * @method toSVG
-     * @return {string} svg representation of an instance
+     * @return {String} svg representation of an instance
      */
     toSVG: function() {
       return [
@@ -89,7 +92,7 @@
     _render: function(ctx, noTransform) {
       ctx.beginPath();
       ctx.save();
-      ctx.globalAlpha *= this.opacity;
+      ctx.globalAlpha = this.group ? (ctx.globalAlpha * this.opacity) : this.opacity;
       if (this.transformMatrix && this.group) {
         ctx.translate(this.cx, this.cy);
       }
@@ -152,7 +155,7 @@
   };
 
   /**
-   * Returns fabric.Ellipse instance from an object representation
+   * Returns {@link fabric.Ellipse} instance from an object representation
    * @static
    * @method fabric.Ellipse.fromObject
    * @param {Object} object Object to create an instance from

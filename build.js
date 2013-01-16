@@ -14,7 +14,7 @@ buildArgs.forEach(function(arg) {
 var modulesToInclude = buildArgsAsObject.modules ? buildArgsAsObject.modules.split(',') : [ ];
 var modulesToExclude = buildArgsAsObject.exclude ? buildArgsAsObject.exclude.split(',') : [ ];
 
-var minifier = buildArgsAsObject.minifier || 'yui';
+var minifier = buildArgsAsObject.minifier || 'uglifyjs';
 var mininfierCmd;
 
 if (minifier === 'yui') {
@@ -22,6 +22,9 @@ if (minifier === 'yui') {
 }
 else if (minifier === 'closure') {
   mininfierCmd = 'java -jar lib/google_closure_compiler.jar --js dist/all.js --js_output_file dist/all.min.js';
+}
+else if (minifier === 'uglifyjs') {
+  mininfierCmd = 'uglifyjs -o dist/all.min.js dist/all.js';
 }
 
 var includeAllModules = modulesToInclude.length === 1 && modulesToInclude[0] === 'ALL';
@@ -85,6 +88,8 @@ var filesToInclude = [
   ifSpecifiedDependencyInclude('text', 'cufon', 'lib/cufon.js'),
   ifSpecifiedDependencyInclude('serialization', 'json', 'lib/json2.js'),
 
+  ifSpecifiedInclude('gestures', 'lib/event.js'),
+
   'src/log.js',
   'src/observable.js',
 
@@ -109,11 +114,15 @@ var filesToInclude = [
   'src/color.class.js',
 
   'src/static_canvas.class.js',
+
+  ifSpecifiedInclude('freedrawing', 'src/freedrawing.class.js'),
+
   ifSpecifiedInclude('interaction', 'src/canvas.class.js'),
 
   'src/canvas.animation.js',
 
   ifSpecifiedInclude('serialization', 'src/canvas.serialization.js'),
+  ifSpecifiedInclude('gestures', 'src/canvas.gestures.js'),
 
   'src/object.class.js',
   'src/line.class.js',

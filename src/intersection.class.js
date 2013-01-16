@@ -12,6 +12,7 @@
   }
 
   /**
+   * Intersection class
    * @class Intersection
    * @memberOf fabric
    */
@@ -26,6 +27,7 @@
   fabric.Intersection.prototype = /** @scope fabric.Intersection.prototype */ {
 
     /**
+     * Constructor
      * @method init
      * @param {String} status
      */
@@ -35,16 +37,18 @@
     },
 
     /**
+     * Appends a point to intersection
      * @method appendPoint
-     * @param {String} status
+     * @param {fabric.Point} point
      */
     appendPoint: function (point) {
       this.points.push(point);
     },
 
     /**
+     * Appends points to intersection
      * @method appendPoints
-     * @param {String} status
+     * @param {Array} points
      */
     appendPoints: function (points) {
       this.points = this.points.concat(points);
@@ -52,8 +56,14 @@
   };
 
   /**
+   * Checks if one line intersects another
    * @static
    * @method intersectLineLine
+   * @param {fabric.Point} a1
+   * @param {fabric.Point} a2
+   * @param {fabric.Point} b1
+   * @param {fabric.Point} b2
+   * @return {fabric.Intersection}
    */
   fabric.Intersection.intersectLineLine = function (a1, a2, b1, b2) {
     var result,
@@ -83,7 +93,13 @@
   };
 
   /**
+   * Checks if line intersects polygon
    * @method intersectLinePolygon
+   * @static
+   * @param {fabric.Point} a1
+   * @param {fabric.Point} a2
+   * @param {Array} points
+   * @return {fabric.Intersection}
    */
   fabric.Intersection.intersectLinePolygon = function(a1,a2,points){
     var result = new Intersection("No Intersection"),
@@ -103,7 +119,12 @@
   };
 
   /**
+   * Checks if polygon intersects another polygon
    * @method intersectPolygonPolygon
+   * @static
+   * @param {Array} points1
+   * @param {Array} points2
+   * @return {fabric.Intersection}
    */
   fabric.Intersection.intersectPolygonPolygon = function (points1, points2) {
     var result = new Intersection("No Intersection"),
@@ -123,7 +144,14 @@
   };
 
   /**
+   * Checks if polygon intersects rectangle
    * @method intersectPolygonRectangle
+
+   * @static
+   * @param {Array} points
+   * @param {Number} r1
+   * @param {Number} r2
+   * @return {fabric.Intersection}
    */
   fabric.Intersection.intersectPolygonRectangle = function (points, r1, r2) {
     var min = r1.min(r2),
@@ -140,8 +168,9 @@
     result.appendPoints(inter2.points);
     result.appendPoints(inter3.points);
     result.appendPoints(inter4.points);
+
     if (result.points.length > 0) {
-      result.status="Intersection";
+      result.status = "Intersection";
     }
     return result;
   };

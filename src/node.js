@@ -11,6 +11,7 @@
       Canvas = require('canvas'),
       Image = require('canvas').Image;
 
+  /** @private */
   function request(url, encoding, callback) {
     var oURL = URL.parse(url),
         client = HTTP.createClient(oURL.port, oURL.hostname),
@@ -42,14 +43,20 @@
     });
   }
 
-  fabric.util.loadImage = function(url, callback) {
-    request(url, 'binary', function(body) {
-      var img = new Image();
-      img.src = new Buffer(body, 'binary');
-      // preserving original url, which seems to be lost in node-canvas
-      img._src = url;
-      callback(img);
-    });
+  fabric.util.loadImage = function(url, callback, context) {
+    var img = new Image();
+    if (url && url.indexOf('data') === 0) {
+      img.src = img._src = url;
+      callback && callback.call(context, img);
+    }
+    else if (url) {
+      request(url, 'binary', function(body) {
+        img.src = new Buffer(body, 'binary');
+        // preserving original url, which seems to be lost in node-canvas
+        img._src = url;
+        callback && callback.call(context, img);
+      });
+    }
   };
 
   fabric.loadSVGFromURL = function(url, callback) {
@@ -109,6 +116,7 @@
     return fabricCanvas;
   };
 
+  /** @ignore */
   fabric.StaticCanvas.prototype.createPNGStream = function() {
     return this.nodeCanvas.createPNGStream();
   };
